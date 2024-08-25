@@ -1,0 +1,11 @@
+FROM node:18 as builder
+WORKDIR /app
+RUN npm install -g @angular/cli
+COPY . .
+RUN npm install
+RUN ng build
+
+FROM nginx:latest
+COPY --from=builder /app/dist/app /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+RUN ls /usr/share/nginx/html

@@ -1,0 +1,181 @@
+<div class="container">
+	<div *ngIf="plantsService.isLoading$ | async">Loading plants - hang tight...</div>
+	<div *ngIf="!(plantsService.isLoading$ | async)">
+
+		<!-- begin buttons -->
+		<div class="button-controls" *ngIf="mode !== 'public'">
+
+			<!-- start filters dropdown -->
+			<div *ngIf="!isInEditOrAddMode()">
+				<button mat-raised-button [matMenuTriggerFor]="filterMenu">Filters</button>
+				<mat-menu #filterMenu="matMenu">
+					<div class="menu-content">
+						<mat-radio-group #group="matRadioGroup">
+							<div class="menu-item">
+								<mat-radio-button value="uncondensed"
+									[checked]="!condensedView"
+									(change)="viewModeChanged(false)"
+									(click)="$event.stopPropagation()">
+									Large
+								</mat-radio-button>
+								<mat-radio-button value="condensed"
+									[checked]="condensedView"
+									(change)="viewModeChanged(true)"
+									(click)="$event.stopPropagation()">
+									Small
+								</mat-radio-button>
+							</div>
+						</mat-radio-group>
+						<div class="menu-item" style="text-align: left">
+							<mat-checkbox value="needsCare"
+								[checked]="filters.get('needsCare')"
+								(change)="filterChange('needsCare')"
+								(click)="$event.stopPropagation()">Needs
+								Care</mat-checkbox>
+						</div>
+						<div class="menu-item">
+							<mat-form-field appearance="fill">
+								<mat-label>Name</mat-label>
+								<input type="text" matInput
+									[(ngModel)]="plantNameFilter"
+									name="plantNameFilter"
+									(click)="$event.stopPropagation()">
+							</mat-form-field>
+						</div>
+						<div class="menu-item">
+							<mat-form-field>
+								<mat-label>Tags</mat-label>
+								<mat-select
+									(selectionChange)="addFilterTag($event.value)"
+									(click)="$event.stopPropagation()">
+									<mat-option
+										*ngFor="let tag of plantsService.tags"
+										[value]="tag">{{tag}}</mat-option>
+								</mat-select>
+							</mat-form-field>
+						</div>
+						<div class="menu-item" *ngIf="filterTags.length > 0">
+							<mat-chip-listbox
+								style="display: inline-block; text-align: center;">
+								<mat-chip-option *ngFor="let tag of filterTags"
+									[removable]="true"
+									(removed)="removeFilterTag(tag)"
+									(click)="$event.stopPropagation()">
+									{{tag}}
+									<mat-icon matChipRemove>cancel</mat-icon>
+								</mat-chip-option>
+							</mat-chip-listbox>
+						</div>
+					</div>
+				</mat-menu>
+			</div>
+			<!-- end filters dropdown -->
+
+			<button mat-button mat-raised-button color="primary"
+				*ngIf="!isInEditOrAddMode() && (authenticationService.isAuthenticated$ | async)"
+				(click)="switchToAddPlantMode()">Add
+				Plant
+			</button>
+
+		</div>
+		<!-- end buttons -->
+
+		<!-- begin add/edit plant modal -->
+		<div class="button-controls" *ngIf="isInEditOrAddMode()">
+			<div class="button-group-top">
+				<button mat-button mat-raised-button color="warn" *ngIf="isInEditOrAddMode()"
+					(click)="cancelAddMode(); $event.preventDefault()">Cancel</button>
+			</div>
+
+			<form (ngSubmit)="addPlant()" [formGroup]="form" *ngIf="form">
+				<mat-form-field hintLabel="Max 30 characters" appearance="fill">
+					<mat-label>Plant Name</mat-label>
+					<input matInput formControlName="name" #input maxlength="30">
+					<mat-hint align="end">{{input.value.length}}/30</mat-hint>
+				</mat-form-field>
+				<mat-form-field hintLabel="Max 30 characters" appearance="fill">
+					<mat-label>Tag</mat-label>
+					<input matInput formControlName="tag" name="tag" [matAutocomplete]="auto">
+					<mat-autocomplete #auto="matAutocomplete">
+						<mat-option *ngFor="let tag of plantsService.tags"
+							[value]="tag">{{tag}}</mat-option>
+					</mat-autocomplete>
+				</mat-form-field>
+				<mat-form-field appearance="fill">
+					<mat-label>Watering Frequency</mat-label>
+					<mat-select formControlName="wateringFrequency">
+						<mat-option *ngFor="let option of wateringFrequencyOptions"
+							[value]="option">
+							{{ option }} day{{ option !== 1 ? 's' : '' }}
+						</mat-option>
+					</mat-select>
+				</mat-form-field>
+				<mat-form-field appearance="fill">
+					<mat-label>Fertilizing Frequency</mat-label>
+					<mat-select formControlName="fertilizingFrequency">
+						<mat-option *ngFor="let option of fertilizingFrequencyOptions"
+							[value]="option">
+							{{ option }} day{{ option === 0 ? ' (never)' : option !== 1 ?
+							's' : '' }}
+						</mat-option>
+					</mat-select>
+				</mat-form-field>
+				<mat-form-field appearance="fill">
+					<mat-label>Last Watered Date</mat-label>
+					<input matInput [formControl]="editingPlantLastWaterDate"
+						[matDatepicker]="pickerWater">
+					<mat-hint>MM/DD/YYYY</mat-hint>
+					<mat-datepicker-toggle matIconSuffix
+						[for]="pickerWater"></mat-datepicker-toggle>
+					<mat-datepicker #pickerWater></mat-datepicker>
+				</mat-form-field>
+				<mat-form-field
+					*ngIf="form.controls.fertilizingFrequency.value && form.controls.fertilizingFrequency.value>0"
+					appearance="fill">
+					<mat-label>Last Fertilize Date</mat-label>
+					<input matInput [formControl]="editingPlantLastFertilizeDate"
+						[matDatepicker]="pickerFertilize">
+					<mat-hint>MM/DD/YYYY</mat-hint>
+					<mat-datepicker-toggle matIconSuffix
+						[for]="pickerFertilize"></mat-datepicker-toggle>
+					<mat-datepicker #pickerFertilize></mat-datepicker>
+				</mat-form-field>
+
+				<mat-checkbox formControlName="doNotify" class="example-margin">Email
+					Notifications</mat-checkbox>
+				<mat-radio-group formControlName="publicOrPrivate">
+					<mat-radio-button value="public">Public</mat-radio-button>
+					<mat-radio-button value="private">Private</mat-radio-button>
+				</mat-radio-group>
+				<button type="button" mat-raised-button (click)="fileInput.click()">Plant
+					Picture</button>
+				<input hidden (change)="onImageSelected($event)" #fileInput type="file" id="file">
+				<img id="preview" [src]="selectedImagePreview_safe" />
+				<div class="button-group" *ngIf="!isProcessingAddOrUpdate">
+					<button *ngIf="editingPlant" mat-button mat-raised-button color="primary"
+						type="submit">Update</button>
+					<button *ngIf="!editingPlant" mat-button mat-raised-button color="primary"
+						type="submit">Add</button>
+				</div>
+				<mat-spinner *ngIf="isProcessingAddOrUpdate"></mat-spinner>
+
+			</form>
+		</div>
+		<!-- end add/edit plant modal -->
+	</div>
+</div>
+
+<div *ngIf="!isInEditOrAddMode()">
+	<ng-container *ngIf="plantsService.getPlantsForMode(mode) | async as plants">
+		<div *ngIf="plants | plantFilter:filters:plantNameFilter:filterTags as filteredPlants">
+			<p>Showing {{filteredPlants.length}} of {{plants.length}} plants.</p>
+			<div class="plants">
+				<div *ngFor="let plant of filteredPlants">
+					<app-plant [isCondensed]="condensedView"
+						(editModeEmitter)="switchToditPlantMode($event)"
+						[plant]="plant"></app-plant>
+				</div>
+			</div>
+		</div>
+	</ng-container>
+</div>

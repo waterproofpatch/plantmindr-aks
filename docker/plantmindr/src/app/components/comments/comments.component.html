@@ -1,0 +1,30 @@
+<div class="container">
+	<button mat-button mat-raised-button color="primary" (click)="goBack()">Back</button>
+	<div *ngIf="authenticationService.isAuthenticated$ | async">
+		<div class="comment-form">
+			<mat-form-field appearance="fill">
+				<mat-label>Comment</mat-label>
+				<textarea (keyup.enter)="addComment()" [(ngModel)]="commentContent" matInput></textarea>
+			</mat-form-field>
+			<button mat-button mat-raised-button (click)="addComment()">Post</button>
+		</div>
+
+		<mat-divider></mat-divider>
+	</div>
+
+	<mat-spinner *ngIf="commentsService.isLoading$ | async"></mat-spinner>
+	<mat-card class="comment" *ngFor="let comment of commentsService.comments$ | async">
+		<mat-card-header>
+			<mat-card-title>{{ comment.username }}</mat-card-title>
+			<mat-card-subtitle>{{ comment.createdAt | date:'MM/dd/yyyy' }}</mat-card-subtitle>
+		</mat-card-header>
+		<mat-card-content>
+			{{ comment.content }}
+		</mat-card-content>
+		<mat-card-actions
+			*ngIf="(authenticationService.isAuthenticated$ | async) && (comment.username == authenticationService.username || plantUsername == authenticationService.username)">
+			<button mat-button mat-raised-button color="warn"
+				(click)="deleteComment(comment)">Delete</button>
+		</mat-card-actions>
+	</mat-card>
+</div>

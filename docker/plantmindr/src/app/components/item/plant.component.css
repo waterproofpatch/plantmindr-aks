@@ -1,0 +1,91 @@
+.plant-theirs {
+	max-width: 250px;
+	min-width: 250px;
+	/* height: auto; */
+	max-height: 500;
+	min-height: 500;
+	margin: 10px;
+	color: blue;
+}
+
+.plant-mine {
+	max-width: 250px;
+	min-width: 250px;
+	/* height: auto; */
+	max-height: 500;
+	min-height: 500;
+	margin: 10px;
+}
+
+.nonCondensedImage img {
+	width: 250px;
+	/* Adjust as needed */
+	height: 250px;
+	/* Adjust as needed */
+	object-fit: contain;
+	/* This will ensure that your images cover the entire space without distortion */
+}
+
+.condensedImage img {
+	width: 50px;
+	/* Adjust as needed */
+	height: 50px;
+	/* Adjust as needed */
+	object-fit: contain;
+	/* This will ensure that your images cover the entire space without distortion */
+}
+
+mat-card-title {
+	height: 75px;
+	/* Adjust as needed */
+	overflow: hidden;
+	/* This will hide any text that overflows the fixed height */
+}
+
+mat-card-actions {
+	display: flex;
+	justify-content: space-between;
+}
+
+.water-times {
+	display: flex;
+	justify-content: space-between;
+}
+
+.left {
+	text-align: left;
+}
+
+.right {
+	text-align: right;
+}
+
+.lock-icon {
+	position: absolute;
+	top: 10px;
+	right: 10px;
+	font-size: 20px;
+	color: black;
+}
+
+div .menu-icon {
+	padding: 0px;
+	margin: 0px;
+}
+
+.menu-icon {
+	position: absolute;
+	top: 0;
+	right: 0px;
+	font-size: 20px;
+	color: black;
+}
+
+.plant-header-image {
+	/*background-image: url('https://material.angular.io/assets/img/examples/shiba1.jpg');*/
+	background-size: cover;
+}
+
+.date {
+	color: #999;
+}

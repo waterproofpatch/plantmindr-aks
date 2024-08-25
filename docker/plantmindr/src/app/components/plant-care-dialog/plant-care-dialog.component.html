@@ -1,0 +1,12 @@
+<h1 mat-dialog-title>Message</h1>
+<div mat-dialog-content>{{data.confirmationMsg}}</div>
+<section>
+	<mat-checkbox [(ngModel)]="data.water">Water</mat-checkbox>
+	<mat-checkbox [(ngModel)]="data.fertilize">Fertilize</mat-checkbox>
+	<mat-checkbox [(ngModel)]="data.skipFertilize">Skip Fertilize</mat-checkbox>
+	<mat-checkbox [(ngModel)]="data.moist">Is Moist</mat-checkbox>
+</section>
+<div mat-dialog-actions>
+	<button mat-button (click)="dialogRef.close(data)">Confirm</button>
+	<button mat-button (click)="data.cancelled=true;dialogRef.close(data)">Cancel</button>
+</div>

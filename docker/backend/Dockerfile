@@ -1,0 +1,33 @@
+FROM golang:1.18-alpine AS build
+
+RUN apk add python3 git tzdata
+COPY src/email_service/*.py /email_service/
+COPY src/email_service/requirements.txt /email_service/
+WORKDIR /app
+
+# add go src code
+COPY src .
+RUN go mod download
+
+# build go src code
+RUN ls -al
+RUN GOOS=linux go build -ldflags="-s -w" -v -o /web-app
+
+FROM alpine:3.13
+RUN apk --no-cache add ca-certificates python3 python3-dev gcc musl-dev linux-headers libffi-dev
+
+# add email_service code
+COPY --from=build /email_service /email_service
+WORKDIR /email_service
+RUN python3 -m venv venv
+RUN venv/bin/python -m pip install --upgrade pip
+RUN venv/bin/python -m pip install -r requirements.txt
+
+# add golang project
+WORKDIR /usr/bin
+COPY --from=build /web-app .
+
+ENV SITE_TIMESTAMP="main_0974a43_03/27/24 22:43:17"
+
+EXPOSE 80
+CMD /usr/bin/web-app --port $PORT 

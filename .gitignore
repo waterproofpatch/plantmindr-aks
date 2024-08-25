@@ -1,0 +1,7 @@
+docker/backend/src/tmp/main
+node_modules
+.angular
+secret.env
+backup.sql
+bin
+obj
