@@ -10,9 +10,3 @@ echo "Checking for public IP"
 # kubectl get service ingress-nginx-controller --namespace=ingress-nginx
 EXTERNAL_IP=$(kubectl get service ingress-nginx-controller --namespace=ingress-nginx -o json | jq -r '.status.loadBalancer.ingress[0].ip')
 echo "External IP: $EXTERNAL_IP"
-
-echo "Testing site..."
-wget http://$EXTERNAL_IP
-
-# get info about ingress
-# kubectl get ingress -A
