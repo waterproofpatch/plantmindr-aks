@@ -18,7 +18,7 @@ az deployment sub create \
     --template-file $DEPLOY_BICEP \
     --parameters resourceGroupName=$RG_NAME resourceGroupLocation=$LOCATION
 
-# # Create an SSH key pair using Azure CLI. Fails noncrit if key exists
+# Create an SSH key pair using Azure CLI. Fails noncrit if key exists
 az sshkey create --name "$KEY_NAME" --resource-group $RG_NAME
 PUBLIC_KEY=$(az sshkey show --name "$KEY_NAME" --resource-group $RG_NAME --query "publicKey" --output tsv)
 
@@ -33,3 +33,6 @@ az deployment group create \
     linuxAdminUsername=$USER \
     acrName=$ACRNAME \
     sshRSAPublicKey="$PUBLIC_KEY"
+
+echo "Getting AKS credentials..."
+az aks get-credentials --resource-group $RG_NAME --name $CLUSTER_NAME
