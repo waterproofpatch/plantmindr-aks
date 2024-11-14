@@ -15,14 +15,9 @@ make install
 ## Deploy
 
 ``` bash
-(cd deployment && bash deploy.sh)
-```
-
-## Using Docker for azure-cli
-
-``` bash
 make devbox
 make run_devbox
+make deploy
 ```
 
 ## Testing
