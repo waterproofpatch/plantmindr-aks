@@ -4,6 +4,7 @@ deploy_azure:
 deploy_k8s:
 	(cd deployment/k8s && bash deploy.sh)
 
+# builds docker images and pushes them to the acr, then restarts the k8s service
 update_k8s: deploy_acr
 	(cd deployment/k8s && bash update.sh)
 
