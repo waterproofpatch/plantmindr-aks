@@ -39,8 +39,10 @@ make dev
 
 ## DB Utils
 
+Make sure your local DB is up (`make dev`) or else you might get error about app-db-user not existing.
+
 ``` bash
-cd docker/backend/tools
+cd docker/backend/tools/DatabaseCopyProject
 dotnet build
 source ../../../../secret.env
 ./bin/Debug/net8.0/DatabaseCopyProject

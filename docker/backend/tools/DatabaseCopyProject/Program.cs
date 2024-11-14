@@ -5,14 +5,22 @@ class Program
 {
 	static void Main()
 	{
-		string sourceConnectionString = Environment.GetEnvironmentVariable("DB_CONN_STRING");
-		string destinationConnectionString = Environment.GetEnvironmentVariable("DESTINATION_CONNECTION_STRING");
+		string? sourceConnectionString = Environment.GetEnvironmentVariable("DB_CONN_STRING");
+		string? destinationConnectionString = Environment.GetEnvironmentVariable("DESTINATION_CONNECTION_STRING");
+		if (sourceConnectionString == null || destinationConnectionString == null)
+		{
+			Console.WriteLine("Not all environment variables are initialized!");
+			return;
+		}
+		Console.WriteLine("Got environment variables...");
 
 		using (var sourceConnection = new NpgsqlConnection(sourceConnectionString))
 		using (var destinationConnection = new NpgsqlConnection(destinationConnectionString))
 		{
 			sourceConnection.Open();
 			destinationConnection.Open();
+
+			Console.WriteLine("Opened source and destination connections...");
 
 			// Get the list of tables in the source database
 			using (var sourceCommand = new NpgsqlCommand("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'", sourceConnection))
@@ -22,7 +30,7 @@ class Program
 				while (reader.Read())
 				{
 					string tableName = reader["table_name"].ToString();
-					Console.WriteLine(tableName);
+					Console.WriteLine("Read table name: " + tableName);
 
 					// Create the table in the destination database if it doesn't exist
 					using (var createTableCommand = new NpgsqlCommand($@"
