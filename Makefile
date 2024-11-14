@@ -5,11 +5,11 @@ deploy_k8s:
 	(cd deployment/k8s && bash deploy.sh)
 
 # builds docker images and pushes them to the acr, then restarts the k8s service
-update_k8s: deploy_acr
+update_k8s: update_images
 	(cd deployment/k8s && bash restart.sh)
 
-deploy_acr:
-	(cd deployment/acr && bash deploy.sh)
+update_images:
+	(cd deployment/k8s  && bash update_images.sh)
 
 update: update_k8s
 
