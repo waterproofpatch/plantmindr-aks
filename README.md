@@ -17,6 +17,7 @@ make install
 ``` bash
 make devbox
 make run_devbox
+az login
 make deploy
 ```
 
