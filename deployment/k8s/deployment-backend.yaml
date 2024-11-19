@@ -16,8 +16,12 @@ spec:
         - name: static-website-backend
           image: mcoronistestacr3.azurecr.io/aks-test/plantmindr-backend:latest
           imagePullPolicy: Always
+          env:
+            - name: PORT
+              value: "80"
           ports:
             - containerPort: 80
+
 ---
 apiVersion: v1
 kind: Service
