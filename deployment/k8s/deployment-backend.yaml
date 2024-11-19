@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: static-website
+  name: static-website-backend
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: static-website
+      app: static-website-backend
   template:
     metadata:
       labels:
-        app: static-website
+        app: static-website-backend
     spec:
       containers:
-        - name: static-website
-          image: mcoronistestacr3.azurecr.io/aks-test/plantmindr-frontend:latest
+        - name: static-website-backend
+          image: mcoronistestacr3.azurecr.io/aks-test/plantmindr-backend:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 80
@@ -22,28 +22,27 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: static-website
+  name: static-website-backend
 spec:
   type: ClusterIP
   ports:
     - port: 80
   selector:
-    app: static-website
+    app: static-website-backend
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: static-website
+  name: static-website-backend
 spec:
   ingressClassName: nginx
   rules:
-    # - host: mysite2.com
     - http:
         paths:
-          - path: /
+          - path: /api/
             pathType: Prefix
             backend:
               service:
-                name: static-website
+                name: static-website-backend
                 port:
                   number: 80
