@@ -22,6 +22,9 @@ update: update_k8s
 
 deploy: deploy_azure deploy_k8s
 
+deploy_db: 
+	(cd deployment/azure && bash deploy_db.sh)
+
 dev:
 	docker-compose --file docker/docker-compose.yml up --build
 
