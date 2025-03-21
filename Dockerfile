@@ -1,4 +1,5 @@
-FROM mcr.microsoft.com/azure-cli
+# this is for the devbox
+FROM mcr.microsoft.com/azure-cli:2.63.0
 RUN apk update & apk add make
 RUN az bicep upgrade
 RUN az aks install-cli
