@@ -8,10 +8,6 @@ Make sure `azure-cli` is installed:
 brew install azure-cli
 ```
 
-``` bash
-make install
-```
-
 ## Deploy
 
 ``` bash
