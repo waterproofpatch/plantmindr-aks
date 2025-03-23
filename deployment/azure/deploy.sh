@@ -10,6 +10,7 @@ ACRNAME="mcoronistestacr3"
 
 # resource group (subscription level)
 # az group create --name $RG_NAME --location $LOCATION
+az login
 
 echo "Creating deployment..."
 az deployment sub create \
