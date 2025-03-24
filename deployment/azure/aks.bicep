@@ -64,5 +64,25 @@ resource acrPullRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   }
 }
 
+resource vault 'Microsoft.KeyVault/vaults@2023-07-01' = {
+  name: 'plantmindrrbackv'
+  location: location
+  properties: {
+    sku: {
+      family: 'A'
+      name: 'premium'
+    }
+    tenantId: tenant().tenantId
+    softDeleteRetentionInDays: 90
+    enableSoftDelete: true
+    enablePurgeProtection: true
+    enableRbacAuthorization: true
+    networkAcls: {
+      defaultAction: 'Deny'
+      bypass: 'AzureServices'
+    }
+  }
+}
+
 output controlPlaneFQDN string = aks.properties.fqdn
 output controlPlanePrincipalId string = aks.identity.principalId
