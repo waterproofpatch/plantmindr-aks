@@ -102,7 +102,8 @@ func main() {
 		true, // requiresVerificaiton
 		app.ResetPasswordCallback,
 		app.RegistrationCallback,
-		registrationCallbackUrl)
+		registrationCallbackUrl,
+		os.Getenv("DEBUG") == "true")
 
 	db := authentication.GetDb()
 
