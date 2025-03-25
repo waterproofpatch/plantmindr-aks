@@ -5,6 +5,7 @@ KEY_NAME="sshKey"
 DNS_PREFIX="mcoronistestaks"
 USER="azureuser"
 ACRNAME="mcoronistestacr3"
+SUB_ID="f9eebc87-0701-4ec6-a34d-25ace368eafd"
 
 RG_DEPLOY_BICEP="rg.bicep"
 AKS_DEPLOY_BICEP="aks.bicep"
@@ -34,5 +35,59 @@ az deployment group create \
     acrName=$ACRNAME \
     sshRSAPublicKey="$PUBLIC_KEY"
 
+echo "Enabling OIDC and Workload Identity..."
+az aks update -g $RG_NAME -n $CLUSTER_NAME --enable-oidc-issuer --enable-workload-identity
+az identity create --name "akskvidentity" --resource-group $RG_NAME  --location $LOCATION --subscription $SUB_ID
+USER_ASSIGNED_CLIENT_ID=$(az identity show --resource-group $RG_NAME --name "akskvidentity" --query 'clientId' -otsv)
+echo "Client ID: $USER_ASSIGNED_CLIENT_ID"
+
+
 echo "Getting AKS credentials..."
 az aks get-credentials --resource-group $RG_NAME --name $CLUSTER_NAME
+
+AKS_OIDC_ISSUER=$(az aks show -n $CLUSTER_NAME -g $RG_NAME --query "oidcIssuerProfile.issuerUrl" -otsv)
+echo "AKS OIDC Issuer: $AKS_OIDC_ISSUER"
+
+echo """
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    azure.workload.identity/client-id: "$USER_ASSIGNED_CLIENT_ID"
+  name: "akskvidentityserviceaccount"
+  namespace: "default"
+  labels:
+    azure.workload.identity/use: \"true\"
+""" > identity-service-account.yaml
+
+kubectl apply -f identity-service-account.yaml
+
+IDENTITY_TENANT=$(az aks show --name $CLUSTER_NAME --resource-group $RG_NAME --query identity.tenantId -o tsv)
+
+cat <<EOF | kubectl apply -f -
+# This is a SecretProviderClass example using workload identity to access your key vault
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: azure-kvname-wi # needs to be unique per namespace
+spec:
+  provider: azure
+  parameters:
+    usePodIdentity: "false"
+    clientID: "$USER_ASSIGNED_CLIENT_ID" # Setting this to use workload identity
+    keyvaultName: plantmindrrbackv       # Set to the name of your key vault
+    cloudName: ""                         # [OPTIONAL for Azure] if not provided, the Azure environment defaults to AzurePublicCloud
+    objects:  |
+      array:
+        - |
+          objectName: secret1             # Set to the name of your secret
+          objectType: secret              # object types: secret, key, or cert
+          objectVersion: ""               # [OPTIONAL] object versions, default to latest if empty
+        - |
+          objectName: key1                # Set to the name of your key
+          objectType: key
+          objectVersion: ""
+    tenantId: "${IDENTITY_TENANT}"        # The tenant ID of the key vault
+EOF
+
+az identity federated-credential create --name "akskvfederatedidentity" --identity-name "akskvidentity" --resource-group $RG_NAME --issuer $AKS_OIDC_ISSUER --subject system:serviceaccount:"default:akskvidentityserviceaccount" --audience api://AzureADTokenExchange

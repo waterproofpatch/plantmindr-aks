@@ -3,6 +3,7 @@ kind: Deployment
 metadata:
   name: static-website-backend
 spec:
+  serviceAccountName: akskvidentityserviceaccount
   replicas: 1
   selector:
     matchLabels:

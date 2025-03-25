@@ -84,5 +84,20 @@ resource vault 'Microsoft.KeyVault/vaults@2023-07-01' = {
   }
 }
 
+// var kvSecretsUserRoleDefinitionId = subscriptionResourceId(
+//   'Microsoft.Authorization/roleDefinitions',
+//   '4633458b-17de-408a-b874-0445c86b69e6' // Key Vault Secrets User role
+// )
+
+// resource kvSecretsUserRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+//   name: guid(resourceGroup().id, aks.id, kvSecretsUserRoleDefinitionId)
+//   scope: vault
+//   properties: {
+//     principalId: aks.identity.principalId
+//     roleDefinitionId: kvSecretsUserRoleDefinitionId
+//     principalType: 'ServicePrincipal'
+//   }
+// }
+
 output controlPlaneFQDN string = aks.properties.fqdn
 output controlPlanePrincipalId string = aks.identity.principalId
