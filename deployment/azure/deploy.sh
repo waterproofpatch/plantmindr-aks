@@ -6,6 +6,8 @@ DNS_PREFIX="mcoronistestaks"
 USER="azureuser"
 ACRNAME="mcoronistestacr3"
 SUB_ID="f9eebc87-0701-4ec6-a34d-25ace368eafd"
+KV_MSI_NAME="akskvidentity"
+K8_SERVICE_ACCOUNT_NAME="akskvidentityserviceaccount"
 
 RG_DEPLOY_BICEP="rg.bicep"
 AKS_DEPLOY_BICEP="aks.bicep"
@@ -37,8 +39,8 @@ az deployment group create \
 
 echo "Enabling OIDC and Workload Identity..."
 az aks update -g $RG_NAME -n $CLUSTER_NAME --enable-oidc-issuer --enable-workload-identity
-az identity create --name "akskvidentity" --resource-group $RG_NAME  --location $LOCATION --subscription $SUB_ID
-USER_ASSIGNED_CLIENT_ID=$(az identity show --resource-group $RG_NAME --name "akskvidentity" --query 'clientId' -otsv)
+az identity create --name $KV_MSI_NAME --resource-group $RG_NAME  --location $LOCATION --subscription $SUB_ID
+USER_ASSIGNED_CLIENT_ID=$(az identity show --resource-group $RG_NAME --name $KV_MSI_NAME --query 'clientId' -otsv)
 echo "Client ID: $USER_ASSIGNED_CLIENT_ID"
 
 
@@ -54,7 +56,7 @@ kind: ServiceAccount
 metadata:
   annotations:
     azure.workload.identity/client-id: "$USER_ASSIGNED_CLIENT_ID"
-  name: "akskvidentityserviceaccount"
+  name: "$K8_SERVICE_ACCOUNT_NAME"
   namespace: "default"
   labels:
     azure.workload.identity/use: \"true\"
@@ -64,6 +66,7 @@ kubectl apply -f identity-service-account.yaml
 
 IDENTITY_TENANT=$(az aks show --name $CLUSTER_NAME --resource-group $RG_NAME --query identity.tenantId -o tsv)
 
+# TODO: unsure if needed
 cat <<EOF | kubectl apply -f -
 # This is a SecretProviderClass example using workload identity to access your key vault
 apiVersion: secrets-store.csi.x-k8s.io/v1
@@ -90,4 +93,4 @@ spec:
     tenantId: "${IDENTITY_TENANT}"        # The tenant ID of the key vault
 EOF
 
-az identity federated-credential create --name "akskvfederatedidentity" --identity-name "akskvidentity" --resource-group $RG_NAME --issuer $AKS_OIDC_ISSUER --subject system:serviceaccount:"default:akskvidentityserviceaccount" --audience api://AzureADTokenExchange
+az identity federated-credential create --name "akskvfederatedidentity" --identity-name $KV_MSI_NAME --resource-group $RG_NAME --issuer $AKS_OIDC_ISSUER --subject system:serviceaccount:"default:$K8_SERVICE_ACCOUNT_NAME" --audience api://AzureADTokenExchange

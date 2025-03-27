@@ -14,9 +14,11 @@ update_images: update_frontend update_backend
 
 update_backend:
 	(cd deployment/k8s && bash update_images.sh backend)
+	(cd deployment/k8s && bash restart.sh)
 
 update_frontend:
 	(cd deployment/k8s && bash update_images.sh frontend)
+	(cd deployment/k8s && bash restart.sh)
 
 update: update_k8s
 
