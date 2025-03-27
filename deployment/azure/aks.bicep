@@ -78,7 +78,7 @@ resource vault 'Microsoft.KeyVault/vaults@2023-07-01' = {
     enablePurgeProtection: true
     enableRbacAuthorization: true
     networkAcls: {
-      defaultAction: 'Deny'
+      defaultAction: 'Deny' // todo: enable public access
       bypass: 'AzureServices'
     }
   }
