@@ -87,9 +87,19 @@ func main() {
 
 	// must happen before we get the db
 	registrationCallbackUrl := "https://www.plantmindr.com/authentication?mode=login&verified=true"
+	var dbUrl string = ""
 	if os.Getenv("DEBUG") == "true" {
 		registrationCallbackUrl = "https://localhost:4200/authentication?mode=login&verified=true"
+		fmt.Println("Using env DATABASE_URL")
+		dbUrl = os.Getenv("DATABASE_URL")
+	} else {
+		dbUrl, err = app.GetSecret("sqlDbPassword", "plantmindrrbackv")
+		if err != nil {
+			fmt.Println("Error getting secret: ", err)
+			panic("Error getting secret")
+		}
 	}
+
 	authentication.Init(
 		os.Getenv("SECRET"),
 		os.Getenv("REFRESH_SECRET"),
@@ -97,7 +107,7 @@ func main() {
 		os.Getenv("DEFAULT_ADMIN_USERNAME"),
 		os.Getenv("DEFAULT_ADMIN_PASSWORD"),
 		router,
-		os.Getenv("DATABASE_URL"),
+		dbUrl,
 		dropTables,
 		true, // requiresVerificaiton
 		app.ResetPasswordCallback,
