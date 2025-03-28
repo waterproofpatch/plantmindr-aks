@@ -88,24 +88,53 @@ func main() {
 	// must happen before we get the db
 	registrationCallbackUrl := "https://www.plantmindr.com/authentication?mode=login&verified=true"
 	var dbUrl string = ""
+	var secret string = ""
+	var refreshSecret string = ""
+	var defaultAdminEmail string = ""
+	var defaultAdminUsername string = ""
+	var defaultAdminPassword string = ""
 	if os.Getenv("DEBUG") == "true" {
 		registrationCallbackUrl = "https://localhost:4200/authentication?mode=login&verified=true"
 		fmt.Println("Using env DATABASE_URL")
 		dbUrl = os.Getenv("DATABASE_URL")
+		secret = os.Getenv("SECRET")
+		refreshSecret = os.Getenv("SECRET")
+		defaultAdminEmail = os.Getenv("DEFAULT_ADMIN_EMAIL")
+		defaultAdminUsername = os.Getenv("DEFAULT_ADMIN_USERNAME")
+		defaultAdminPassword = os.Getenv("DEFAULT_ADMIN_PASSWORD")
 	} else {
 		dbUrl, err = app.GetSecret("sqlDbPassword", "plantmindrrbackv")
 		if err != nil {
-			fmt.Println("Error getting secret: ", err)
+			panic("Error getting secret")
+		}
+		secret, err = app.GetSecret("secret", "plantmindrrbackv")
+		if err != nil {
+			panic("Error getting secret")
+		}
+		refreshSecret, err = app.GetSecret("refreshSecret", "plantmindrrbackv")
+		if err != nil {
+			panic("Error getting secret")
+		}
+		defaultAdminEmail, err = app.GetSecret("defaultAdminEmail", "plantmindrrbackv")
+		if err != nil {
+			panic("Error getting secret")
+		}
+		defaultAdminUsername, err = app.GetSecret("defaultAdminUsername", "plantmindrrbackv")
+		if err != nil {
+			panic("Error getting secret")
+		}
+		defaultAdminPassword, err = app.GetSecret("defaultAdminPassword", "plantmindrrbackv")
+		if err != nil {
 			panic("Error getting secret")
 		}
 	}
 
 	authentication.Init(
-		os.Getenv("SECRET"),
-		os.Getenv("REFRESH_SECRET"),
-		os.Getenv("DEFAULT_ADMIN_EMAIL"),
-		os.Getenv("DEFAULT_ADMIN_USERNAME"),
-		os.Getenv("DEFAULT_ADMIN_PASSWORD"),
+		secret,
+		refreshSecret,
+		defaultAdminEmail,
+		defaultAdminUsername,
+		defaultAdminPassword,
 		router,
 		dbUrl,
 		dropTables,
