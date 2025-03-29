@@ -173,7 +173,6 @@ func plants(w http.ResponseWriter, r *http.Request, claims *auth_types.JWTData) 
 		}
 	}
 	if claims != nil {
-		// db.Where("email = ? OR is_public = ?", claims.Email, true).Preload("Logs").Preload("Comments").Find(&plants)
 		err := GetPlants(db, claims.Email, &plants)
 		if err != nil {
 			WriteResponse(w, "Failed to get plants", http.StatusBadRequest, Generic)
