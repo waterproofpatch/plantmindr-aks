@@ -13,6 +13,20 @@ import (
 	"gorm.io/gorm"
 )
 
+func dropTables(db *gorm.DB) {
+	// Drop tables if they exist
+	fmt.Println("Dropping tables...")
+	if err := db.Migrator().DropTable(
+		&models.PlantLogModel{},
+		&models.PlantModel{},
+		&models.CommentModel{},
+		&models.ImageModel{}); err != nil {
+		log.Printf("Error dropping tables: %v", err)
+	} else {
+		log.Println("Dropped tables successfully")
+	}
+}
+
 func main() {
 	srcDbPassword := flag.String("srcDbPassword", "srcPassword", "Source DB Password")
 	srcDbUrlName := flag.String("srcDbUrlName", "srcName", "Source DB URL name")
@@ -38,6 +52,9 @@ func main() {
 		log.Fatalf("Failed to connect to Azure SQL: %v", err)
 	}
 
+	// dropTables(targetDb) // Drop existing tables in the target database to ensure a clean migration
+	// return
+
 	fmt.Println("Connected to PostgreSQL and Azure SQL databases successfully!")
 
 	fmt.Println("Migrating PlantModel...")
@@ -51,6 +68,7 @@ func main() {
 	if err := sourceDb.Find(&records).Error; err != nil {
 		log.Fatalf("Failed to fetch records from PostgreSQL: %v", err)
 	}
+	fmt.Println("Found ", len(records), "records in PostgreSQL.")
 
 	// Synchronize data to Azure SQL
 	for _, record := range records {
