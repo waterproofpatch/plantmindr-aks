@@ -54,11 +54,67 @@ func main() {
 	}
 
 	dropTables(targetDb) // Drop existing tables in the target database to ensure a clean migration
-
+	// get the map
+	srcPlantNameIdMap := buildPlantNameIdMap(sourceDb)
+	srcImageIdHashMap := buildImageShaToImageIdMap(sourceDb)
+	// print the map
+	fmt.Println("Source Plant Name -> imageid map: ", srcPlantNameIdMap)
+	fmt.Println("sha -> imageId map", srcImageIdHashMap)
+	// now build a map of image name to image sha
 	migratePlants(sourceDb, targetDb)
-	migrateComments(sourceDb, targetDb)
-	migratePlantLogs(sourceDb, targetDb)
-	//migrateImages(sourceDb, targetDb)
+	// migrateComments(sourceDb, targetDb)
+	// migratePlantLogs(sourceDb, targetDb)
+	var idMap = migrateImages(sourceDb, targetDb)
+	// now update the plant records with the new imageId
+	var plants []models.PlantModel
+	if err := targetDb.Find(&plants).Error; err != nil {
+		log.Fatalf("Failed to fetch records from PostgreSQL: %v", err)
+	}
+	fmt.Println("Found ", len(plants), "records in PostgreSQL.")
+	for _, plant := range plants {
+		// get the imageId from the map
+		var newImageId = idMap[plant.ImageId]
+		fmt.Println("Updating plant old imageId: ", plant.ImageId, " Image ID: ", newImageId)
+		plant.ImageId = newImageId
+		if err := targetDb.Save(&plant).Error; err != nil {
+			log.Printf("Failed to upsert record ID %d: %v", plant.ID, err)
+		}
+	}
+
+}
+
+func buildImageShaToImageIdMap(db *gorm.DB) map[string]uint {
+	var records []models.ImageModel
+	if err := db.Find(&records).Error; err != nil {
+		log.Fatalf("Failed to fetch records from PostgreSQL: %v", err)
+	}
+	fmt.Println("Found ", len(records), "records in PostgreSQL.")
+
+	// store imageId -> sha512 hash of .Data field map
+	srcImageIdHashMap := make(map[string]uint)
+	for _, record := range records {
+		// compute sha512 hash over record.Data
+		var hash = sha512.Sum512(record.Data)
+		// turn the hash into a string
+		hashString := fmt.Sprintf("%x", hash)
+		srcImageIdHashMap[hashString] = record.ID
+		fmt.Println("Image ID: ", record.ID, " Image Hash: ", hashString)
+	}
+	return srcImageIdHashMap
+}
+
+func buildPlantNameIdMap(db *gorm.DB) map[string]int {
+	// build a plantId -> plantName map from the source db
+	srcPlantNameIdMap := make(map[string]int)
+	var plants []models.PlantModel
+	if err := db.Find(&plants).Error; err != nil {
+		log.Fatalf("Failed to fetch records from PostgreSQL: %v", err)
+	}
+	for _, plant := range plants {
+		fmt.Println("Plant ID: ", plant.ID, " Plant Name: ", plant.Name)
+		srcPlantNameIdMap[plant.Name] = plant.ImageId
+	}
+	return srcPlantNameIdMap
 
 }
 
@@ -110,12 +166,14 @@ func migrateComments(sourceDb *gorm.DB, targetDb *gorm.DB) {
 	fmt.Println("Synchronization complete!")
 }
 
-func migrateImages(sourceDb *gorm.DB, targetDb *gorm.DB) {
+func migrateImages(sourceDb *gorm.DB, targetDb *gorm.DB) map[int]int {
 
 	// AutoMigrate the schema for Azure SQL
 	if err := targetDb.AutoMigrate(&models.ImageModel{}); err != nil {
 		log.Fatalf("Failed to migrate Azure SQL schema: %v", err)
 	}
+
+	var idMap = make(map[int]int)
 
 	// Fetch all records from PostgreSQL
 	var records []models.ImageModel
@@ -124,40 +182,23 @@ func migrateImages(sourceDb *gorm.DB, targetDb *gorm.DB) {
 	}
 	fmt.Println("Found ", len(records), "records in PostgreSQL.")
 
-	// store imageId -> sha512 hash of .Data field map
-	srcImageIdHashMap := make(map[string]uint)
-	for _, record := range records {
-		// compute sha512 hash over record.Data
-		var hash = sha512.Sum512(record.Data)
-		// turn the hash into a string
-		hashString := fmt.Sprintf("%x", hash)
-		srcImageIdHashMap[hashString] = record.ID
-		fmt.Println("Image ID: ", record.ID, " Image Hash: ", hashString)
-	}
-
 	// Synchronize data to Azure SQL
 	for _, record := range records {
+		fmt.Println("Old image.ID: ", record.ID)
+		var oldId = int(record.ID)
 		if err := targetDb.Clauses(clause.OnConflict{
 			UpdateAll: true,
 		}).Create(&record).Error; err != nil {
 			log.Printf("Failed to upsert record ID %d: %v", record.ID, err)
 		}
+		fmt.Println("New image.ID: ", record.ID)
+		idMap[oldId] = int(record.ID)
 	}
 	fmt.Println("Synchronization complete!")
+	return idMap
 }
 
 func migratePlants(sourceDb *gorm.DB, targetDb *gorm.DB) {
-
-	// build a plantId -> plantName map from the source db
-	srcPlantNameIdMap := make(map[string]uint)
-	var plants []models.PlantModel
-	if err := sourceDb.Find(&plants).Error; err != nil {
-		log.Fatalf("Failed to fetch records from PostgreSQL: %v", err)
-	}
-	for _, plant := range plants {
-		fmt.Println("Plant ID: ", plant.ID, " Plant Name: ", plant.Name)
-		srcPlantNameIdMap[plant.Name] = plant.ID
-	}
 
 	fmt.Println("Connected to PostgreSQL and Azure SQL databases successfully!")
 
@@ -180,19 +221,6 @@ func migratePlants(sourceDb *gorm.DB, targetDb *gorm.DB) {
 		}).Create(&record).Error; err != nil {
 			log.Fatalf("Failed to upsert record ID %d: %v", record.ID, err)
 		}
-		// fmt.Println("Will change plant ID: ", record.ID, " Plant Name: ", record.Name, " to ID: ", srcPlantNameIdMap[record.Name])
-		// record.ID = srcPlantNameIdMap[record.Name]
-		// targetDb.Save(&record)
 	}
 	fmt.Printf("Synchronization complete, migrated %d plants!\n", len(records))
-
-	var plantsDst []models.PlantModel
-	if err := targetDb.Find(&plantsDst).Error; err != nil {
-		log.Fatalf("Failed to fetch records from target db: %v", err)
-	}
-	for _, plant := range plantsDst {
-		fmt.Println("Would change plant ID: ", plant.ID, " Plant Name: ", plant.Name, " to ID: ", srcPlantNameIdMap[plant.Name])
-		// plant.ID = srcPlantNameIdMap[plant.Name]
-		// targetDb.Save(&plant)
-	}
 }
