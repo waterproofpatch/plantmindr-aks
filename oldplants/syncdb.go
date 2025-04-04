@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/sha512"
 	"dbsync/models"
 	"flag"
 	"fmt"
@@ -53,18 +52,13 @@ func main() {
 		log.Fatalf("Failed to connect to Azure SQL: %v", err)
 	}
 
-	dropTables(targetDb) // Drop existing tables in the target database to ensure a clean migration
-	// get the map
-	srcPlantNameIdMap := buildPlantNameIdMap(sourceDb)
-	srcImageIdHashMap := buildImageShaToImageIdMap(sourceDb)
-	// print the map
-	fmt.Println("Source Plant Name -> imageid map: ", srcPlantNameIdMap)
-	fmt.Println("sha -> imageId map", srcImageIdHashMap)
-	// now build a map of image name to image sha
+	dropTables(targetDb)
+
 	migratePlants(sourceDb, targetDb)
-	// migrateComments(sourceDb, targetDb)
-	// migratePlantLogs(sourceDb, targetDb)
+	migrateComments(sourceDb, targetDb)
+	migratePlantLogs(sourceDb, targetDb)
 	var idMap = migrateImages(sourceDb, targetDb)
+
 	// now update the plant records with the new imageId
 	var plants []models.PlantModel
 	if err := targetDb.Find(&plants).Error; err != nil {
@@ -80,41 +74,6 @@ func main() {
 			log.Printf("Failed to upsert record ID %d: %v", plant.ID, err)
 		}
 	}
-
-}
-
-func buildImageShaToImageIdMap(db *gorm.DB) map[string]uint {
-	var records []models.ImageModel
-	if err := db.Find(&records).Error; err != nil {
-		log.Fatalf("Failed to fetch records from PostgreSQL: %v", err)
-	}
-	fmt.Println("Found ", len(records), "records in PostgreSQL.")
-
-	// store imageId -> sha512 hash of .Data field map
-	srcImageIdHashMap := make(map[string]uint)
-	for _, record := range records {
-		// compute sha512 hash over record.Data
-		var hash = sha512.Sum512(record.Data)
-		// turn the hash into a string
-		hashString := fmt.Sprintf("%x", hash)
-		srcImageIdHashMap[hashString] = record.ID
-		fmt.Println("Image ID: ", record.ID, " Image Hash: ", hashString)
-	}
-	return srcImageIdHashMap
-}
-
-func buildPlantNameIdMap(db *gorm.DB) map[string]int {
-	// build a plantId -> plantName map from the source db
-	srcPlantNameIdMap := make(map[string]int)
-	var plants []models.PlantModel
-	if err := db.Find(&plants).Error; err != nil {
-		log.Fatalf("Failed to fetch records from PostgreSQL: %v", err)
-	}
-	for _, plant := range plants {
-		fmt.Println("Plant ID: ", plant.ID, " Plant Name: ", plant.Name)
-		srcPlantNameIdMap[plant.Name] = plant.ImageId
-	}
-	return srcPlantNameIdMap
 
 }
 
