@@ -54,10 +54,10 @@ func main() {
 
 	dropTables(targetDb)
 
-	migratePlants(sourceDb, targetDb)
-	migrateComments(sourceDb, targetDb)
-	migratePlantLogs(sourceDb, targetDb)
-	var idMap = migrateImages(sourceDb, targetDb)
+	var plantIdMap = migratePlants(sourceDb, targetDb)
+	migrateComments(sourceDb, targetDb, plantIdMap)
+	migratePlantLogs(sourceDb, targetDb, plantIdMap)
+	var imageIdMap = migrateImages(sourceDb, targetDb)
 
 	// now update the plant records with the new imageId
 	var plants []models.PlantModel
@@ -66,8 +66,7 @@ func main() {
 	}
 	fmt.Println("Found ", len(plants), "records in PostgreSQL.")
 	for _, plant := range plants {
-		// get the imageId from the map
-		var newImageId = idMap[plant.ImageId]
+		var newImageId = imageIdMap[plant.ImageId]
 		fmt.Println("Updating plant old imageId: ", plant.ImageId, " Image ID: ", newImageId)
 		plant.ImageId = newImageId
 		if err := targetDb.Save(&plant).Error; err != nil {
@@ -77,7 +76,7 @@ func main() {
 
 }
 
-func migratePlantLogs(sourceDb *gorm.DB, targetDb *gorm.DB) {
+func migratePlantLogs(sourceDb *gorm.DB, targetDb *gorm.DB, plantIdMap map[uint]uint) {
 	// AutoMigrate the schema for Azure SQL
 	if err := targetDb.AutoMigrate(&models.PlantLogModel{}); err != nil {
 		log.Fatalf("Failed to migrate Azure SQL schema: %v", err)
@@ -92,6 +91,7 @@ func migratePlantLogs(sourceDb *gorm.DB, targetDb *gorm.DB) {
 
 	// Synchronize data to Azure SQL
 	for _, record := range records {
+		record.PlantID = int(plantIdMap[uint(record.PlantID)])
 		if err := targetDb.Clauses(clause.OnConflict{
 			UpdateAll: true,
 		}).Create(&record).Error; err != nil {
@@ -101,7 +101,7 @@ func migratePlantLogs(sourceDb *gorm.DB, targetDb *gorm.DB) {
 	fmt.Println("Synchronization complete!")
 }
 
-func migrateComments(sourceDb *gorm.DB, targetDb *gorm.DB) {
+func migrateComments(sourceDb *gorm.DB, targetDb *gorm.DB, plantIdMap map[uint]uint) {
 	// AutoMigrate the schema for Azure SQL
 	if err := targetDb.AutoMigrate(&models.CommentModel{}); err != nil {
 		log.Fatalf("Failed to migrate Azure SQL schema: %v", err)
@@ -116,6 +116,7 @@ func migrateComments(sourceDb *gorm.DB, targetDb *gorm.DB) {
 
 	// Synchronize data to Azure SQL
 	for _, record := range records {
+		record.PlantID = int(plantIdMap[uint(record.PlantID)])
 		if err := targetDb.Clauses(clause.OnConflict{
 			UpdateAll: true,
 		}).Create(&record).Error; err != nil {
@@ -157,9 +158,11 @@ func migrateImages(sourceDb *gorm.DB, targetDb *gorm.DB) map[int]int {
 	return idMap
 }
 
-func migratePlants(sourceDb *gorm.DB, targetDb *gorm.DB) {
+// returns a map of previous plantId to new plantId
+func migratePlants(sourceDb *gorm.DB, targetDb *gorm.DB) map[uint]uint {
 
 	fmt.Println("Connected to PostgreSQL and Azure SQL databases successfully!")
+	var plantIdMap = make(map[uint]uint)
 
 	// AutoMigrate the schema for Azure SQL
 	if err := targetDb.AutoMigrate(&models.PlantModel{}); err != nil {
@@ -175,11 +178,15 @@ func migratePlants(sourceDb *gorm.DB, targetDb *gorm.DB) {
 
 	// Synchronize data to Azure SQL
 	for _, record := range records {
+		var oldId = record.ID
 		if err := targetDb.Clauses(clause.OnConflict{
 			UpdateAll: true,
 		}).Create(&record).Error; err != nil {
 			log.Fatalf("Failed to upsert record ID %d: %v", record.ID, err)
 		}
+		var newId = record.ID
+		plantIdMap[oldId] = newId
 	}
 	fmt.Printf("Synchronization complete, migrated %d plants!\n", len(records))
+	return plantIdMap
 }
