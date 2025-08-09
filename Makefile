@@ -28,7 +28,7 @@ dev:
 	docker-compose --file docker/docker-compose.yml up --build
 
 init-k8s:
-	az aks get-credentials --resource-group "akswebapprg" --name "webappakscluster"
+	(cd deployment/k8s && bash init.sh)
 
 devbox:
 	docker build . -t plantmindr-devbox
