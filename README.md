@@ -8,11 +8,20 @@ Make sure `azure-cli` is installed:
 brew install azure-cli
 ```
 
-## Deploy
-
 ``` bash
 make devbox
 make run_devbox
+```
+
+## Explore
+
+```bash
+make init-k8s
+```
+
+## Deploy
+
+```
 az login
 make deploy
 ```
