@@ -5,3 +5,4 @@ secret.env
 backup.sql
 bin
 obj
+oldplants/secret.txt
