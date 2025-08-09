@@ -1,4 +1,4 @@
-# Stuff
+# Plantmindr
 
 ## Prerequisites
 
