@@ -21,7 +21,7 @@ make init-k8s
 
 ## Deploy
 
-```
+```bash
 az login
 make deploy
 ```
