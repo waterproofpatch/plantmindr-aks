@@ -38,11 +38,16 @@ func GetPlants(db *gorm.DB, email string, plants *[]PlantModel) error {
 		return err
 	}
 
-	db.Where("email = ? OR is_public = ?", email, true).Preload("Logs").Preload("Comments").Find(&plants)
+	if email == "" {
+		db.Where("is_public = ?", true).Preload("Logs").Preload("Comments").Find(&plants)
+	} else {
+		db.Where("email = ? OR is_public = ?", email, true).Preload("Logs").Preload("Comments").Find(&plants)
+	}
 	if db.Error != nil {
 		fmt.Println("Had an error getting plants:", db.Error)
 		return db.Error
 	}
-	fmt.Println("done getting plants")
+	// print the number of plants we got
+	fmt.Printf("Got %d plants\n", len(*plants))
 	return nil
 }
