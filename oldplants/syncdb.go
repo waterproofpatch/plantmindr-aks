@@ -54,9 +54,10 @@ func main() {
 
 	dropTables(targetDb)
 
-	var plantIdMap = migratePlants(sourceDb, targetDb)
-	migrateComments(sourceDb, targetDb, plantIdMap)
-	migratePlantLogs(sourceDb, targetDb, plantIdMap)
+	var _ = migratePlants(sourceDb, targetDb)
+	// migrateComments(sourceDb, targetDb, plantIdMap)
+	// migratePlantLogs(sourceDb, targetDb, plantIdMap)
+	log.Printf("Migrating plant images...")
 	var imageIdMap = migrateImages(sourceDb, targetDb)
 
 	// now update the plant records with the new imageId
