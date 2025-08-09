@@ -9,6 +9,5 @@ kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/cont
 
 echo "Checking for public IP"
 
-# kubectl get service ingress-nginx-controller --namespace=ingress-nginx
 EXTERNAL_IP=$(kubectl get service ingress-nginx-controller --namespace=ingress-nginx -o json | jq -r '.status.loadBalancer.ingress[0].ip')
 echo "External IP: $EXTERNAL_IP"
