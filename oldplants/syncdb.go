@@ -2,9 +2,9 @@ package main
 
 import (
 	"dbsync/models"
-	"flag"
 	"fmt"
 	"log"
+	"os"
 
 	"gorm.io/gorm/clause"
 
@@ -28,25 +28,36 @@ func dropTables(db *gorm.DB) {
 }
 
 func main() {
-	srcDbPassword := flag.String("srcDbPassword", "srcPassword", "Source DB Password")
-	srcDbUrlName := flag.String("srcDbUrlName", "srcName", "Source DB URL name")
-	srcDbName := flag.String("srcDbName", "srcDbName", "Source DB name")
-	srcDbUsername := flag.String("srcDbUsername", "srcDbUsername", "Source DB username")
-	dstDbPassword := flag.String("dstDbPassword", "dstPassword", "Destination DB Password")
-	dstDbUrlName := flag.String("dstDbUrlName", "dstName", "Destination DB URL name")
-	dstDbName := flag.String("dstDbName", "dstDbName", "Destination DB name")
-	dstDbUsername := flag.String("dstDbUsername", "dstDbUsername", "Destination DB username")
-	flag.Parse()
+	srcDbPassword := os.Getenv("SRC_DB_PASSWORD")
+	srcDbUrlName := os.Getenv("SRC_DB_URL_NAME")
+	srcDbName := os.Getenv("SRC_DB_NAME")
+	srcDbUsername := os.Getenv("SRC_DB_USERNAME")
+	dstDbPassword := os.Getenv("DST_DB_PASSWORD")
+	dstDbUrlName := os.Getenv("DST_DB_URL_NAME")
+	dstDbName := os.Getenv("DST_DB_NAME")
+	dstDbUsername := os.Getenv("DST_DB_USERNAME")
 
-	// parse the password from each database from arguments
-	postgresDSN := fmt.Sprintf("host=%s.postgres.database.azure.com user=%s password=%s dbname=%s port=5432 sslmode=require", *srcDbUrlName, *srcDbUsername, *srcDbPassword, *srcDbName)
-	sourceDb, err := gorm.Open(postgres.Open(postgresDSN), &gorm.Config{})
-	if err != nil {
-		log.Fatalf("Failed to connect to PostgreSQL: %v", err)
+	// Check if all required environment variables are set
+	requiredEnvVars := []string{
+		"SRC_DB_PASSWORD", "SRC_DB_URL_NAME", "SRC_DB_NAME", "SRC_DB_USERNAME",
+		"DST_DB_PASSWORD", "DST_DB_URL_NAME", "DST_DB_NAME", "DST_DB_USERNAME",
+	}
+	for _, envVar := range requiredEnvVars {
+		if os.Getenv(envVar) == "" {
+			log.Fatalf("Required environment variable %s is not set", envVar)
+		}
 	}
 
+	// use the environment variables
+	postgresDSN := fmt.Sprintf("host=%s.postgres.database.azure.com user=%s password=%s dbname=%s port=5432 sslmode=require", srcDbUrlName, srcDbUsername, srcDbPassword, srcDbName)
+	sourceDb, err := gorm.Open(postgres.Open(postgresDSN), &gorm.Config{})
+	if err != nil {
+		log.Fatalf("Failed to connect to source PostgreSQL: %v", err)
+	}
+	log.Println("Connected to source PostgreSQL database successfully!")
+
 	// Connect to Azure SQL database
-	azureSQLDSN := fmt.Sprintf("server=%s.database.windows.net;user id=%s;password=%s;port=1433;database=%s;", *dstDbUrlName, *dstDbUsername, *dstDbPassword, *dstDbName)
+	azureSQLDSN := fmt.Sprintf("server=%s.database.windows.net;user id=%s;password=%s;port=1433;database=%s;", dstDbUrlName, dstDbUsername, dstDbPassword, dstDbName)
 	targetDb, err := gorm.Open(sqlserver.Open(azureSQLDSN), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Failed to connect to Azure SQL: %v", err)
