@@ -2,6 +2,7 @@ package main
 
 import (
 	"dbsync/models"
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -28,6 +29,9 @@ func dropTables(db *gorm.DB) {
 }
 
 func main() {
+	dropOnly := flag.Bool("drop", false, "If set, only drop tables and exit")
+	flag.Parse()
+
 	srcDbPassword := os.Getenv("SRC_DB_PASSWORD")
 	srcDbUrlName := os.Getenv("SRC_DB_URL_NAME")
 	srcDbName := os.Getenv("SRC_DB_NAME")
@@ -64,6 +68,11 @@ func main() {
 	}
 
 	dropTables(targetDb)
+
+	if *dropOnly {
+		fmt.Println("Drop flag set, exiting after dropping tables")
+		return
+	}
 
 	var _ = migratePlants(sourceDb, targetDb)
 	// migrateComments(sourceDb, targetDb, plantIdMap)
