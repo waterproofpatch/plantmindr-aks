@@ -195,7 +195,9 @@ func migratePlants(sourceDb *gorm.DB, targetDb *gorm.DB) map[uint]uint {
 	if err := sourceDb.Find(&records).Error; err != nil {
 		log.Fatalf("Failed to fetch records from PostgreSQL: %v", err)
 	}
-	fmt.Println("Found ", len(records), "records in PostgreSQL.")
+	fmt.Println("Found ", len(records), "records in source PostgreSQL.")
+
+	var numUpdated = 0
 
 	// Synchronize data to Azure SQL
 	for _, record := range records {
@@ -205,9 +207,10 @@ func migratePlants(sourceDb *gorm.DB, targetDb *gorm.DB) map[uint]uint {
 		}).Create(&record).Error; err != nil {
 			log.Fatalf("Failed to upsert record ID %d: %v", record.ID, err)
 		}
+		numUpdated++
 		var newId = record.ID
 		plantIdMap[oldId] = newId
 	}
-	fmt.Printf("Synchronization complete, migrated %d plants!\n", len(records))
+	fmt.Printf("Synchronization complete, migrated %d plants out of %d!\n", len(records), numUpdated)
 	return plantIdMap
 }
