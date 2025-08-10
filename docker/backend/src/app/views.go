@@ -190,7 +190,6 @@ func plants(w http.ResponseWriter, r *http.Request, claims *auth_types.JWTData) 
 			}
 		}
 	} else {
-		// TODO consider using GetPlants here
 		err := GetPlants(db, "", &plants)
 		if err != nil {
 			WriteResponse(w, "Failed to get plants", http.StatusBadRequest, Generic)
