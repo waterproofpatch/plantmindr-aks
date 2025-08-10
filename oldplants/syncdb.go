@@ -53,16 +53,16 @@ func main() {
 	}
 
 	// use the environment variables
-	postgresDSN := fmt.Sprintf("host=%s.postgres.database.azure.com user=%s password=%s dbname=%s port=5432 sslmode=require", srcDbUrlName, srcDbUsername, srcDbPassword, srcDbName)
-	sourceDb, err := gorm.Open(postgres.Open(postgresDSN), &gorm.Config{})
+	sourceDbConnString := fmt.Sprintf("host=%s.postgres.database.azure.com user=%s password=%s dbname=%s port=5432 sslmode=require", srcDbUrlName, srcDbUsername, srcDbPassword, srcDbName)
+	sourceDb, err := gorm.Open(postgres.Open(sourceDbConnString), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Failed to connect to source PostgreSQL: %v", err)
 	}
 	log.Println("Connected to source PostgreSQL database successfully!")
 
 	// Connect to Azure SQL database
-	azureSQLDSN := fmt.Sprintf("server=%s.database.windows.net;user id=%s;password=%s;port=1433;database=%s;", dstDbUrlName, dstDbUsername, dstDbPassword, dstDbName)
-	targetDb, err := gorm.Open(sqlserver.Open(azureSQLDSN), &gorm.Config{})
+	destinationDbConnString := fmt.Sprintf("server=%s.database.windows.net;user id=%s;password=%s;port=1433;database=%s;", dstDbUrlName, dstDbUsername, dstDbPassword, dstDbName)
+	targetDb, err := gorm.Open(sqlserver.Open(destinationDbConnString), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Failed to connect to Azure SQL: %v", err)
 	}
@@ -94,6 +94,7 @@ func main() {
 			log.Printf("Failed to upsert record ID %d: %v", plant.ID, err)
 		}
 	}
+	targetDb.Commit()
 
 }
 
@@ -212,5 +213,11 @@ func migratePlants(sourceDb *gorm.DB, targetDb *gorm.DB) map[uint]uint {
 		plantIdMap[oldId] = newId
 	}
 	fmt.Printf("Synchronization complete, migrated %d plants out of %d!\n", len(records), numUpdated)
+
+	// print the plantIdMap
+	fmt.Println("Plant ID Map:")
+	for oldId, newId := range plantIdMap {
+		fmt.Printf("Old ID: %d -> New ID: %d\n", oldId, newId)
+	}
 	return plantIdMap
 }
