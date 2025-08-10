@@ -35,3 +35,6 @@ devbox:
 
 run_devbox: devbox
 	docker run -v `pwd`:/workspace -it -w /workspace plantmindr-devbox /bin/bash
+
+backend_logs:
+	kubectl logs -f -l app=static-website-backend --tail=1000
