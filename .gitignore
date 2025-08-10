@@ -6,3 +6,4 @@ backup.sql
 bin
 obj
 oldplants/secret.txt
+oldplants/postgres_dump.sql
