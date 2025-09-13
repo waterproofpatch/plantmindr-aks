@@ -1,6 +1,6 @@
 # this is for the devbox
 FROM mcr.microsoft.com/azure-cli:2.64.0
-RUN tdnf install make wget -y
+RUN tdnf install make wget golang -y
 
 RUN az bicep upgrade
 RUN az aks install-cli

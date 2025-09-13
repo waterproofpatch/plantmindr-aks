@@ -10,7 +10,6 @@ import (
 	"gorm.io/gorm/clause"
 
 	"gorm.io/driver/postgres"
-	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
 )
 
@@ -29,17 +28,19 @@ func dropTables(db *gorm.DB) {
 }
 
 func main() {
-	dropOnly := flag.Bool("drop", false, "If set, only drop tables and exit")
+	// dropOnly := flag.Bool("drop", false, "If set, only drop tables and exit")
 	flag.Parse()
 
-	srcDbPassword := os.Getenv("SRC_DB_PASSWORD")
-	srcDbUrlName := os.Getenv("SRC_DB_URL_NAME")
-	srcDbName := os.Getenv("SRC_DB_NAME")
-	srcDbUsername := os.Getenv("SRC_DB_USERNAME")
-	dstDbPassword := os.Getenv("DST_DB_PASSWORD")
-	dstDbUrlName := os.Getenv("DST_DB_URL_NAME")
-	dstDbName := os.Getenv("DST_DB_NAME")
-	dstDbUsername := os.Getenv("DST_DB_USERNAME")
+	// srcDbPassword := os.Getenv("SRC_DB_PASSWORD")
+	// srcDbUrlName := os.Getenv("SRC_DB_URL_NAME")
+	// srcDbName := os.Getenv("SRC_DB_NAME")
+	// srcDbUsername := os.Getenv("SRC_DB_USERNAME")
+	// dstDbPassword := os.Getenv("DST_DB_PASSWORD")
+	// dstDbUrlName := os.Getenv("DST_DB_URL_NAME")
+	// dstDbName := os.Getenv("DST_DB_NAME")
+	// dstDbUsername := os.Getenv("DST_DB_USERNAME")
+	srcDbConnString := os.Getenv("SRC_DB_CONN_STRING")
+	dstDbConnString := os.Getenv("DST_DB_CONN_STRING")
 
 	// Check if all required environment variables are set
 	requiredEnvVars := []string{
@@ -53,48 +54,51 @@ func main() {
 	}
 
 	// use the environment variables
-	sourceDbConnString := fmt.Sprintf("host=%s.postgres.database.azure.com user=%s password=%s dbname=%s port=5432 sslmode=require", srcDbUrlName, srcDbUsername, srcDbPassword, srcDbName)
-	sourceDb, err := gorm.Open(postgres.Open(sourceDbConnString), &gorm.Config{})
+	// sourceDbConnString := fmt.Sprintf("host=%s.postgres.database.azure.com user=%s password=%s dbname=%s port=5432 sslmode=require", srcDbUrlName, srcDbUsername, srcDbPassword, srcDbName)
+	sourceDb, err := gorm.Open(postgres.Open(srcDbConnString), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Failed to connect to source PostgreSQL: %v", err)
 	}
 	log.Println("Connected to source PostgreSQL database successfully!")
 
 	// Connect to Azure SQL database
-	destinationDbConnString := fmt.Sprintf("server=%s.database.windows.net;user id=%s;password=%s;port=1433;database=%s;", dstDbUrlName, dstDbUsername, dstDbPassword, dstDbName)
-	targetDb, err := gorm.Open(sqlserver.Open(destinationDbConnString), &gorm.Config{})
+	// destinationDbConnString := fmt.Sprintf("server=%s.database.windows.net;user id=%s;password=%s;port=1433;database=%s;", dstDbUrlName, dstDbUsername, dstDbPassword, dstDbName)
+	//targetDb, err := gorm.Open(sqlserver.Open(destinationDbConnString), &gorm.Config{})
+	targetDb, err := gorm.Open(postgres.Open(dstDbConnString), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Failed to connect to Azure SQL: %v", err)
 	}
+	log.Printf("targetDb: %v", targetDb)
+	log.Printf("sourceDb: %v", sourceDb)
 
-	dropTables(targetDb)
+	// dropTables(targetDb)
 
-	if *dropOnly {
-		fmt.Println("Drop flag set, exiting after dropping tables")
-		return
-	}
+	// if *dropOnly {
+	// 	fmt.Println("Drop flag set, exiting after dropping tables")
+	// 	return
+	// }
 
-	var _ = migratePlants(sourceDb, targetDb)
-	// migrateComments(sourceDb, targetDb, plantIdMap)
-	// migratePlantLogs(sourceDb, targetDb, plantIdMap)
-	log.Printf("Migrating plant images...")
-	var imageIdMap = migrateImages(sourceDb, targetDb)
+	// var _ = migratePlants(sourceDb, targetDb)
+	// // migrateComments(sourceDb, targetDb, plantIdMap)
+	// // migratePlantLogs(sourceDb, targetDb, plantIdMap)
+	// log.Printf("Migrating plant images...")
+	// var imageIdMap = migrateImages(sourceDb, targetDb)
 
-	// now update the plant records with the new imageId
-	var plants []models.PlantModel
-	if err := targetDb.Find(&plants).Error; err != nil {
-		log.Fatalf("Failed to fetch records from PostgreSQL: %v", err)
-	}
-	fmt.Println("Found ", len(plants), "records in PostgreSQL.")
-	for _, plant := range plants {
-		var newImageId = imageIdMap[plant.ImageId]
-		fmt.Println("Updating plant old imageId: ", plant.ImageId, " Image ID: ", newImageId)
-		plant.ImageId = newImageId
-		if err := targetDb.Save(&plant).Error; err != nil {
-			log.Printf("Failed to upsert record ID %d: %v", plant.ID, err)
-		}
-	}
-	targetDb.Commit()
+	// // now update the plant records with the new imageId
+	// var plants []models.PlantModel
+	// if err := targetDb.Find(&plants).Error; err != nil {
+	// 	log.Fatalf("Failed to fetch records from PostgreSQL: %v", err)
+	// }
+	// fmt.Println("Found ", len(plants), "records in PostgreSQL.")
+	// for _, plant := range plants {
+	// 	var newImageId = imageIdMap[plant.ImageId]
+	// 	fmt.Println("Updating plant old imageId: ", plant.ImageId, " Image ID: ", newImageId)
+	// 	plant.ImageId = newImageId
+	// 	if err := targetDb.Save(&plant).Error; err != nil {
+	// 		log.Printf("Failed to upsert record ID %d: %v", plant.ID, err)
+	// 	}
+	// }
+	// targetDb.Commit()
 
 }
 
