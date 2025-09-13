@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/sha256"
 	"dbsync/models"
 	"flag"
 	"fmt"
@@ -91,6 +92,15 @@ func main() {
 	fmt.Println("Found ", len(plantRecords), "records in source PostgreSQL.")
 	var imageRecords = getImageRecords(sourceDb)
 	fmt.Println("Found ", len(imageRecords), "records in source PostgreSQL.")
+
+	// make a map of the image id to sha256 hash of the image data so we can look up a sha256 and find the image id
+	var imageHashMap = make(map[int]string)
+	for _, image := range imageRecords {
+		sum := sha256.Sum256(image.Data)
+		fmt.Printf("imageId: %d %x", image.ID, sum)
+		var sumString = fmt.Sprintf("%x", sum) // convert [32]byte to string
+		imageHashMap[int(image.ID)] = sumString
+	}
 
 	// make a map of plant name to plant image id
 	var plantImageMap = make(map[string]int)
