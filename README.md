@@ -37,17 +37,12 @@ go install sigs.k8s.io/kind@v0.23.0 && kind create cluster
 make dev
 ```
 
-## DB Utils
-
-Make sure your local DB is up (`make dev`) or else you might get error about app-db-user not existing.
-
-``` bash
-cd docker/backend/tools/DatabaseCopyProject
-dotnet build
-source ../../../../secret.env
-./bin/Debug/net8.0/DatabaseCopyProject
-```
-
 ## Misc
 
 * ingress controller setup: <https://spacelift.io/blog/kubernetes-ingress>
+* To import secrets:
+
+```bash
+make run-devbox
+[ ! -f oldplants/secret.env ] || export $(grep -v '^#' oldplants/secret.env | xargs)
+```
