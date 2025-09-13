@@ -110,6 +110,10 @@ export class AuthInterceptorService implements HttpInterceptor {
                 this.dialogService.displayErrorDialog(`403 - Forbidden: ${this.formatErrorMessage(error.error)}`);
                 this.authenticationService.logout(undefined, true);
                 break;
+              case 503: //service unavailable
+                this.dialogService.displayErrorDialog(`503 - Service Unavailable: ${this.formatErrorMessage(error.error)} - may be backend db starting up...`);
+                this.authenticationService.logout(undefined, true);
+                break;
               default:
                 this.dialogService.displayErrorDialog(
                   'Unknown error ' + error.status
