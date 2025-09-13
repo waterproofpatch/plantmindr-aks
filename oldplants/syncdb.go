@@ -27,6 +27,22 @@ func dropTables(db *gorm.DB) {
 	}
 }
 
+func getImageRecords(db *gorm.DB) []models.ImageModel {
+	var images []models.ImageModel
+	if err := db.Find(&images).Error; err != nil {
+		log.Fatalf("Failed to fetch records from PostgreSQL: %v", err)
+	}
+	return images
+}
+
+func getPlantRecords(db *gorm.DB) []models.PlantModel {
+	var plants []models.PlantModel
+	if err := db.Find(&plants).Error; err != nil {
+		log.Fatalf("Failed to fetch records from PostgreSQL: %v", err)
+	}
+	return plants
+}
+
 func main() {
 	// dropOnly := flag.Bool("drop", false, "If set, only drop tables and exit")
 	flag.Parse()
@@ -70,6 +86,19 @@ func main() {
 	}
 	log.Printf("targetDb: %v", targetDb)
 	log.Printf("sourceDb: %v", sourceDb)
+
+	var plantRecords = getPlantRecords(sourceDb)
+	fmt.Println("Found ", len(plantRecords), "records in source PostgreSQL.")
+	var imageRecords = getImageRecords(sourceDb)
+	fmt.Println("Found ", len(imageRecords), "records in source PostgreSQL.")
+
+	// make a map of plant name to plant image id
+	var plantImageMap = make(map[string]int)
+	for _, plant := range plantRecords {
+		plantImageMap[plant.Name] = plant.ImageId
+		log.Printf("Plant: %s ImageId: %d", plant.Name, plant.ImageId)
+
+	}
 
 	// dropTables(targetDb)
 
