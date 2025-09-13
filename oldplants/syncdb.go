@@ -97,7 +97,7 @@ func main() {
 	var imageHashMap = make(map[int]string)
 	for _, image := range imageRecords {
 		sum := sha256.Sum256(image.Data)
-		fmt.Printf("imageId: %d %x", image.ID, sum)
+		// fmt.Printf("imageId: %d %x", image.ID, sum)
 		var sumString = fmt.Sprintf("%x", sum) // convert [32]byte to string
 		imageHashMap[int(image.ID)] = sumString
 	}
@@ -106,7 +106,8 @@ func main() {
 	var plantImageMap = make(map[string]int)
 	for _, plant := range plantRecords {
 		plantImageMap[plant.Name] = plant.ImageId
-		log.Printf("Plant: %s ImageId: %d", plant.Name, plant.ImageId)
+		expectedSha := imageHashMap[plant.ImageId]
+		log.Printf("Plant: %s ImageId: %d, expectedSha %x", plant.Name, plant.ImageId, expectedSha)
 
 	}
 
