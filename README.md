@@ -9,13 +9,13 @@ brew install azure-cli
 ```
 
 ``` bash
-make devbox
 make run_devbox
 ```
 
 ## Explore
 
 ```bash
+az login --use-device-code --tenant 9d2c6922-fbb0-401b-a991-ca9b417eefec
 make init-k8s
 ```
 
