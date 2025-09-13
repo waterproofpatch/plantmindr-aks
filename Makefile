@@ -41,3 +41,7 @@ run_devbox: devbox
 
 backend_logs:
 	kubectl logs -f -l app=static-website-backend --tail=1000
+
+.PHONY: get_ip
+get_ip:
+	@kubectl get ingress static-website-frontend --output custom-columns='IP:.status.loadBalancer.ingress[0].ip'

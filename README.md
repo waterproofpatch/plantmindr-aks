@@ -2,12 +2,6 @@
 
 ## Prerequisites
 
-Make sure `azure-cli` is installed:
-
-``` bash
-brew install azure-cli
-```
-
 ``` bash
 make run_devbox
 ```
@@ -16,6 +10,8 @@ make run_devbox
 
 ```bash
 make init-k8s
+# get the IP for the frontend:
+echo $(kubectl get ingress static-website-frontend --output custom-columns='IP:.status.loadBalancer.ingress[0].ip')
 ```
 
 ## Deploy
