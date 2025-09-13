@@ -108,8 +108,12 @@ func main() {
 		plantImageMap[plant.Name] = plant.ImageId
 		expectedSha := imageHashMap[plant.ImageId]
 		log.Printf("Plant: %s ImageId: %d, expectedSha %x", plant.Name, plant.ImageId, expectedSha)
-
 	}
+
+	var newPlantRecords = getPlantRecords(targetDb)
+	fmt.Println("Found ", len(newPlantRecords), "records in target PostgreSQL.")
+	var newImageRecords = getImageRecords(targetDb)
+	fmt.Println("Found ", len(newImageRecords), "records in target PostgreSQL.")
 
 	// dropTables(targetDb)
 
