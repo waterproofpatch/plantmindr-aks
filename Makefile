@@ -1,3 +1,6 @@
+az_login:
+	az login --use-device-code --tenant 9d2c6922-fbb0-401b-a991-ca9b417eefec
+
 deploy_azure:
 	(cd deployment/azure && bash deploy.sh)
 
@@ -27,7 +30,7 @@ deploy: deploy_azure deploy_k8s
 dev:
 	docker-compose --file docker/docker-compose.yml up --build
 
-init-k8s:
+init-k8s: az_login
 	(cd deployment/k8s && bash init.sh)
 
 devbox:
